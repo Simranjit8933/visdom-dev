@@ -2,7 +2,7 @@
 /* Copyright 2017-present, The Visdom Authors */
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProtectedRoute } from '../ProtectedRoute';
 import { useAuth } from '../../context/AuthContext';
@@ -14,10 +14,12 @@ vi.mock('../../context/AuthContext', () => ({
 const LocationDisplay = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
 
   return (
     <div>
       <div>Current path: {location.pathname}</div>
+      <div>Navigation type: {navigationType}</div>
       <div data-testid="redirect-from">
         {location.state?.from || 'No redirect destination'}
       </div>
@@ -66,10 +68,12 @@ describe('ProtectedRoute', () => {
     expect(screen.getByTestId('redirect-from')).toHaveTextContent('/dashboard?tab=keys');
   });
 
-  it('does not return to the protected page when Back is pressed after redirect', () => {
+  it('uses history replacement when redirecting unauthenticated users to login', () => {
     useAuth.mockReturnValue({ user: null, loading: false });
 
     renderProtectedRoute();
+
+    expect(screen.getByText('Navigation type: REPLACE')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
@@ -88,3 +92,4 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Protected dashboard')).toBeInTheDocument();
   });
 });
+
